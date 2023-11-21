@@ -1,6 +1,15 @@
-import axios from 'axios';
 import { fetchCatBreeds, fetchCatById } from './cat-api';
 import { updateContent } from './service';
+import {
+  showLoader,
+  hideLoader,
+  showSelect,
+  showCatInfo,
+  hideCatInfo,
+} from './service';
+import iziToast from 'izitoast';
+
+import 'izitoast/dist/css/iziToast.min.css';
 
 const elements = {
   loader: document.querySelector('.loader'),
@@ -8,19 +17,53 @@ const elements = {
   catInfo: document.querySelector('.cat-info'),
 };
 
-fetchCatBreeds().then(data => {
-  elements.breedSelect.insertAdjacentHTML('beforeend', addOptins(data));
-});
+function getCatBreeds() {
+  showLoader();
+  try {
+    fetchCatBreeds().then(data => {
+      elements.breedSelect.insertAdjacentHTML('beforeend', addOptins(data));
+    });
+  } catch (error) {
+    iziToast.show({
+      title: 'Error',
+      message: `${error.message}`,
+      color: 'red',
+      position: 'topRight',
+    });
+  } finally {
+    hideLoader();
+    showSelect();
+  }
+}
+
+getCatBreeds();
 
 elements.breedSelect.addEventListener('change', handleSelect);
 
 async function handleSelect(evt) {
   elements.catInfo.innerHTML = '';
+  showLoader();
+  hideCatInfo();
   try {
     const data = await fetchCatById(evt.target.value);
+    if (data.length === 0) {
+      updateContent(
+        elements.catInfo,
+        '<h1>Opps something wrong, try again!</h1>'
+      );
+      return;
+    }
     updateContent(elements.catInfo, createMarkUpCatInfo(data));
   } catch (error) {
-    updateContent(elements.catInfo, '<h1>Opps something wrong</h1>');
+    iziToast.show({
+      title: 'Error',
+      message: `${error.message}`,
+      color: 'red',
+      position: 'topRight',
+    });
+  } finally {
+    hideLoader();
+    showCatInfo();
   }
 }
 
@@ -44,36 +87,3 @@ function createMarkUpCatInfo(arr) {
     )
     .join('');
 }
-
-// adaptability: 5;
-// affection_level: 4;
-// alt_names: '';
-// child_friendly: 4;
-// country_code: 'GR';
-// country_codes: 'GR';
-// description: 'Native to the Greek islands known as the Cyclades in the Aegean Sea, these are natural cats, meaning they developed without humans getting involved in their breeding. As a breed, Aegean Cats are rare, although they are numerous on their home islands. They are generally friendly toward people and can be excellent cats for families with children.';
-// dog_friendly: 4;
-// energy_level: 3;
-// experimental: 0;
-// grooming: 3;
-// hairless: 0;
-// health_issues: 1;
-// hypoallergenic: 0;
-// id: 'aege';
-// indoor: 0;
-// intelligence: 3;
-// life_span: '9 - 12';
-// name: 'Aegean';
-// natural: 0;
-// origin: 'Greece';
-// rare: 0;
-// reference_image_id: 'ozEvzdVM-';
-// rex: 0;
-// shedding_level: 3;
-// short_legs: 0;
-// social_needs: 4;
-// stranger_friendly: 4;
-// suppressed_tail: 0;
-// temperament: 'Affectionate, Social, Intelligent, Playful, Active';
-// vetstreet_url: 'http://www.vetstreet.com/cats/aegean-cat';
-// vocalisation: 3;
